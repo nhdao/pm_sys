@@ -55,7 +55,7 @@ export class UsersService {
   }
 
   async adminUpdateUserById(id: number, updateUserDto: UpdateUserDto) {
-    const { techIds } = updateUserDto
+    const { techIds, ...other } = updateUserDto
     const foundUser = await this.userRepo.findOne({
       where: { id },
       relations: ['userTechs.tech']
@@ -85,7 +85,7 @@ export class UsersService {
       await this.userTechRepo.save(userTechs)
     }
 
-    Object.assign(foundUser, updateUserDto)
+    Object.assign(foundUser, other)
     await this.userRepo.save(foundUser)
     return plainToInstance(UserResponseDto, foundUser, {
       excludeExtraneousValues: true

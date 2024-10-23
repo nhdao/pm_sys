@@ -129,7 +129,7 @@ export class TasksService {
   }
 
   async updateTaskById(id: number, updateTaskDto: UpdateTaskDto, currentUser?: IUser) {
-    const { userId, projectId, deadline } = updateTaskDto
+    const { userId, projectId, deadline, ...other } = updateTaskDto
     const foundTask = await this.taskRepo.findOne({
       where: { id },
       relations: ['manager', 'user', 'user.department', 'project', 'project.department'],
@@ -195,7 +195,7 @@ export class TasksService {
       foundTask.manager = foundProject.manager
     }
 
-    Object.assign(foundTask, updateTaskDto)
+    Object.assign(foundTask, other)
     await this.taskRepo.save(foundTask)
     return plainToInstance(TaskResponseDto, foundTask, {
       excludeExtraneousValues: true

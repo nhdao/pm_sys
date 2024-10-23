@@ -79,7 +79,7 @@ export class RolesService {
   }
 
   async adminUpdateRoleById(id: number, updateRoleDto: UpdateRoleDto) {
-    const { name, permissionIds } = updateRoleDto
+    const { name, permissionIds, ...other } = updateRoleDto
     const foundRole = await this.roleRepo.findOne({
       where: { id },
       relations: ['rolePermissions.permission']
@@ -96,7 +96,7 @@ export class RolesService {
       foundRole.name = name
     }
 
-    Object.assign(foundRole, updateRoleDto)
+    Object.assign(foundRole, other)
     await this.roleRepo.save(foundRole)
 
     if(permissionIds) {

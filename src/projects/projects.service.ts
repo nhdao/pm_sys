@@ -214,7 +214,7 @@ export class ProjectsService {
   }
 
   async updateProjectById(id: number, updateProjectDto: UpdateProjectDto, currentUser?: IUser) {
-    const { name, clientId, due_date, start_date } = updateProjectDto
+    const { name, clientId, due_date, start_date, ...other } = updateProjectDto
     const foundProject = await this.projectRepo.findOne({
       where: { id },
       relations: ['manager'],
@@ -277,7 +277,7 @@ export class ProjectsService {
       }
       foundProject.client = checkClientExist
     }
-    Object.assign(foundProject, updateProjectDto)
+    Object.assign(foundProject, other)
     await this.projectRepo.save(foundProject)
     return plainToInstance(ProjectResponseDto, foundProject, {
       excludeExtraneousValues: true

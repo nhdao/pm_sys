@@ -25,6 +25,13 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config)
   SwaggerModule.setup('api', app, document, {
     swaggerOptions: {
+      apisSorter:'alpha',
+      operationsSorter: 'alpha',
+      tagsSorter: (a: any, b: any) => {
+        if (a === 'Auth') return -1
+        if (b === 'Auth') return 1
+        return a.localeCompare(b)
+      },
       persistAuthorization: true
     }
   })

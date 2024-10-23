@@ -37,7 +37,7 @@ export class DepartmentsService {
   }
 
   async adminUpdateDepartmentById(id: number, updateDepartmentDto: UpdateDepartmentDto) {
-    const { name, managerId } = updateDepartmentDto
+    const { name, managerId, ...other } = updateDepartmentDto
     const foundDepartment = await this.departmentRepo.findOne({
       where: { id },
       relations: ['users'],
@@ -72,7 +72,7 @@ export class DepartmentsService {
         excludeExtraneousValues: true
       })
     }
-    Object.assign(foundDepartment, updateDepartmentDto)
+    Object.assign(foundDepartment, other)
     return await this.departmentRepo.save(foundDepartment)
   }
 

@@ -55,7 +55,7 @@ export class ClientsService {
   }
 
   async adminUpdateClientById(id: number, updateClientDto: UpdateClientDto) {
-    const { name } = updateClientDto
+    const { name, ...other } = updateClientDto
     const foundClient = await this.clientRepo.findOneBy({ id })
     if(!foundClient) {
       throw new NotFoundException('Client not found')
@@ -67,7 +67,8 @@ export class ClientsService {
       }
       foundClient.name = name
     }
-    Object.assign(foundClient, updateClientDto)
+    console.log(other)
+    Object.assign(foundClient, other)
     return await this.clientRepo.save(foundClient)
   }
 
