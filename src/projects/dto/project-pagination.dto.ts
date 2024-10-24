@@ -18,7 +18,6 @@ export class ProjectPaginationDto extends PaginationQueryDto {
   @IsEnum(PrjType)
   type: PrjType
 
-
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

@@ -50,7 +50,7 @@ export class DepartmentsService {
     }
 
     if(name) {
-      const checkDepartmentExist = await this.departmentRepo.findOneBy({name:  name })
+      const checkDepartmentExist = await this.departmentRepo.findOneBy({ name:  name })
       if(checkDepartmentExist) {
         throw new BadRequestException('This department already exists')
       }
@@ -73,6 +73,8 @@ export class DepartmentsService {
       })
     }
     Object.assign(foundDepartment, other)
+    delete foundDepartment.manager.userProjects
+    delete foundDepartment.deletedAt
     return await this.departmentRepo.save(foundDepartment)
   }
 
@@ -204,7 +206,6 @@ export class DepartmentsService {
     if(!result) {
       throw new BadRequestException('Department not found')
     }
-    console.log(result)
     if(currentUser) {
       if( +currentUser.id !== result.manager?.id) {
         throw new BadRequestException('You are not assigned to this department')
@@ -216,7 +217,7 @@ export class DepartmentsService {
   async findDepartmentByUser(currentUser: User) {
     const assignDepartment = await this.departmentRepo.find({
       where: [
-        {users: {id: currentUser.id}}
+        { users: { id: currentUser.id } }
       ]
     })
     return assignDepartment

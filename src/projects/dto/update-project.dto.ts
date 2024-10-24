@@ -5,7 +5,7 @@ import { IsDate, IsEnum, IsOptional, IsString } from 'class-validator';
 import { PrjStatus } from 'src/constants/project-status';
 import { Type } from 'class-transformer';
 
-export class UpdateProjectDto extends PartialType(OmitType(CreateProjectDto, ['departmentId','start_date', 'due_date'] as const)) {
+export class UpdateProjectDto extends PartialType(OmitType(CreateProjectDto, ['start_date', 'due_date'] as const)) {
   @ApiPropertyOptional()
   @IsString()
   @IsEnum(PrjStatus)

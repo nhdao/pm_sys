@@ -34,4 +34,14 @@ export class MailService {
     }
     await this.mailerService.sendMail(template)
   }
+
+  async projectCloseNotify(email: string, name: string, due_date: string) {
+    const template = {
+      to: email,
+      from: 'Admin',
+      subject: 'You have a managed project close',
+      html: `<b>Your managed project: "${name}" will close today: ${due_date}</b>`
+    }
+    await this.mailerService.sendMail(template)
+  }
 }

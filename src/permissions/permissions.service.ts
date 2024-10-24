@@ -64,10 +64,16 @@ export class PermissionsService {
 
   async adminUpdatePermissionById(id: number, updatePermissionDto: UpdatePermissionDto) {
     const { method, api_path } = updatePermissionDto 
-    const foundPermission = await this.permissionRepo.findOneBy({ id })
+    const foundPermission = await this.permissionRepo.findOne({
+      where: { id },
+      relations: ['rolePermissions']
+    })
     if(!foundPermission) {
       throw new NotFoundException('Permission not found')
     } 
+    if(foundPermission.rolePermissions.length) {
+      throw new BadRequestException('Permission is assigned to some roles')
+    }
 
     const checkPermissionExist = await this.permissionRepo.findOneBy({ 
       method: method.toUpperCase(), 

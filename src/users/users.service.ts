@@ -15,6 +15,7 @@ import { UserStatisticDto } from './dto/user-statistic.dto';
 import { UserProject } from './entities/user-project.entity';
 import { Task } from 'src/tasks/entities/task.entity';
 import { UserPaginationDto } from './dto/user-pagination.dto';
+import { IUser } from 'src/interfaces/current-user.interface';
 
 @Injectable()
 export class UsersService {
@@ -54,16 +55,12 @@ export class UsersService {
     return newUser
   }
 
-  async adminUpdateUserById(id: number, updateUserDto: UpdateUserDto) {
+  async updateProfile(updateUserDto: UpdateUserDto, currentUser: IUser) {
     const { techIds, ...other } = updateUserDto
     const foundUser = await this.userRepo.findOne({
-      where: { id },
+      where: { id: +currentUser.id },
       relations: ['userTechs.tech']
     })
-    if(!foundUser) {
-      throw new NotFoundException('User not found')
-    }
-
     if(techIds) {
       const uniqueTechIds = Array.from(new Set(techIds))
       const techs = await Promise.all(uniqueTechIds.map(async techId => {
@@ -97,7 +94,6 @@ export class UsersService {
       where: { id },
       relations: ['department', 'role', 'userTechs.tech'],
       select: {
-        id: true, email: true, firstname: true, lastname: true, approved: true,
         department: { id: true, name: true },
         role: { id: true, name: true }
       }
@@ -106,6 +102,9 @@ export class UsersService {
     if(!foundUser) {
       throw new NotFoundException(`User with id ${id} not found`)
     }
+    delete foundUser.password
+    delete foundUser.refresh_token
+    delete foundUser.deletedAt
     return foundUser
   }
 

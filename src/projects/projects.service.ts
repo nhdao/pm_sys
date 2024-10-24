@@ -214,10 +214,10 @@ export class ProjectsService {
   }
 
   async updateProjectById(id: number, updateProjectDto: UpdateProjectDto, currentUser?: IUser) {
-    const { name, clientId, due_date, start_date, ...other } = updateProjectDto
+    const { name, clientId, due_date, start_date, departmentId, ...other } = updateProjectDto
     const foundProject = await this.projectRepo.findOne({
       where: { id },
-      relations: ['manager'],
+      relations: ['manager', 'tasks'],
       select: {
         manager: { id: true, email: true, firstname: true, lastname: true } 
       }
@@ -276,6 +276,21 @@ export class ProjectsService {
         throw new BadRequestException(`No client found with id ${clientId}`)
       }
       foundProject.client = checkClientExist
+    }
+    if(departmentId) {
+      if(foundProject.tasks.length) {
+        throw new BadRequestException('Some tasks have been assigned to this project')
+      }
+      const checkDepartmentExist = await this.departmentService.checkDepartmentExist(departmentId)
+      if(!checkDepartmentExist) {
+        throw new BadRequestException('Department not found')
+      }
+      if(currentUser) {
+        if(checkDepartmentExist.manager.id !== +currentUser.id) {
+          throw new BadRequestException('You are not manager of this department')
+        }
+      }
+      foundProject.department = checkDepartmentExist
     }
     Object.assign(foundProject, other)
     await this.projectRepo.save(foundProject)

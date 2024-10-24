@@ -106,12 +106,9 @@ export class RolesService {
         if(!permission) {
           throw new NotFoundException(`No permission found with id ${permissionId}`)
         }
-        if(foundRole.rolePermissions.some(rolePermission => rolePermission.permission.id === permission.id)) {
-          throw new BadRequestException(`Permission with id ${permissionId} is already assigned to this role`);
-        }
         return permission
       }))
-  
+      await this.rolePermisisonRepo.delete({ role: foundRole })
       const rolePermissions = permissions.map(permission => {
         return this.rolePermisisonRepo.create({
           role: foundRole,

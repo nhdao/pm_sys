@@ -1,6 +1,5 @@
 import { Controller, Get, Body, Patch, Param, Delete, Query, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { UserApprovalDto } from './dto/user-approval.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserStatisticDto } from './dto/user-statistic.dto';
@@ -34,12 +33,6 @@ export class AdminUsersController {
   @Get(':id') 
   async findOne(@Param('id') id: string) {
     return this.usersService.adminGetUserInfo(+id)
-  }
-
-  @ApiOperation({ summary: 'Update user information' })
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.adminUpdateUserById(+id, updateUserDto);
   }
 
   @ApiOperation({ summary: 'Delete user' })
