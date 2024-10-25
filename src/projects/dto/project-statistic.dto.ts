@@ -1,21 +1,21 @@
 import { IsDate, IsEnum, IsOptional, IsString } from "class-validator"
 import { ApiPropertyOptional } from "@nestjs/swagger"
 import { Type } from "class-transformer"
-import { PrjStatus } from "src/constants/project-status"
-import { PrjType } from "src/constants/project-type.enum"
+import { EPrjStatus } from "src/constants/project-status"
+import { EPrjType } from "src/constants/project-type.enum"
 
 export class ProjectStatisticDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  @IsEnum(PrjType)
-  type: PrjType 
+  @IsEnum(EPrjType)
+  type: EPrjType 
 
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
-  @IsEnum(PrjStatus)
-  status?: PrjStatus = PrjStatus.INPROGESS
+  @IsEnum(EPrjStatus)
+  status?: EPrjStatus = EPrjStatus.INPROGESS
 
   @ApiPropertyOptional()
   @IsOptional()

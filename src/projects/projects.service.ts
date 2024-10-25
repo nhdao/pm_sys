@@ -13,7 +13,7 @@ import { TechnologiesService } from 'src/technologies/technologies.service';
 import { UsersService } from 'src/users/users.service';
 import { AssignUserDto } from './dto/assign-user.dto';
 import { AssignTechDto } from './dto/assign-tech.dto';
-import { PrjStatus } from 'src/constants/project-status';
+import { EPrjStatus } from 'src/constants/project-status';
 import { IUser } from 'src/interfaces/current-user.interface';
 import { ProjectStatisticDto } from './dto/project-statistic.dto';
 import { Task } from 'src/tasks/entities/task.entity';
@@ -315,7 +315,7 @@ export class ProjectsService {
         throw new BadRequestException('You are not manager of this project')
       }
     }
-    if(foundProject.status !== PrjStatus.CLOSE) {
+    if(foundProject.status !== EPrjStatus.CLOSE) {
       throw new BadRequestException('Project is not done yet')
     } 
     await this.projectRepo.softDelete({ id })
@@ -333,7 +333,7 @@ export class ProjectsService {
       relations: ['manager', 'userProjects.project', 'userProjects.user'] 
     })
     
-    if(!foundProject || foundProject.status === PrjStatus.CLOSE) {
+    if(!foundProject || foundProject.status === EPrjStatus.CLOSE) {
       throw new BadRequestException('Project not exist or has been closed')
     }
     if(currentUser) {
@@ -394,7 +394,7 @@ export class ProjectsService {
       }
     }
 
-    if(!foundProject || foundProject.status === PrjStatus.CLOSE) {
+    if(!foundProject || foundProject.status === EPrjStatus.CLOSE) {
       throw new BadRequestException('Project not exist or has been closed')
     }
 

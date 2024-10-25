@@ -1,8 +1,8 @@
-import { Body, Controller, Get, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Req, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { UserDto } from 'src/users/dto/user.dto';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { Public } from 'src/decorators/is-public.decorator';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
@@ -25,8 +25,19 @@ export class AuthController {
   }
 
   @ApiOperation({ summary: 'Handle refresh token' })
-  @Get('/refresh')
+  @Get('refresh')
   handleRefreshToken(@Req() req: any, @Res({ passthrough: true }) res: Response) {
     return this.authService.handleRefreshToken(req.cookies['refresh_token'], res)
   }
+
+  @ApiOperation({ summary: 'Forget password'})
+  @Post('reset-password')
+  resetPassword(@Body() email: string, req: Request) {
+    return this.authService.resetPassword(email, req)
+  }
+
+  @Patch('forget-password/:code')
+  forgetPassword(@Param('code') code: string, @Body() newPassword: string) {
+    return this.authService.forgetPassword(code, newPassword)
+  } 
 }

@@ -4,8 +4,8 @@ import { Task } from "src/tasks/entities/task.entity";
 import { UserProject } from "src/users/entities/user-project.entity";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { ProjectTech } from "./project-tech.entity";
-import { PrjStatus } from "src/constants/project-status";
-import { PrjType } from "src/constants/project-type.enum";
+import { EPrjStatus } from "src/constants/project-status";
+import { EPrjType } from "src/constants/project-type.enum";
 import { User } from "src/users/entities/user.entity";
 
 
@@ -27,10 +27,10 @@ export class Project {
   budget: string
 
   @Column()
-  type: PrjType
+  type: EPrjType
 
-  @Column({ default: PrjStatus.INPROGESS })
-  status: PrjStatus
+  @Column({ default: EPrjStatus.INPROGESS })
+  status: EPrjStatus
 
   @CreateDateColumn()
   created_date: Date

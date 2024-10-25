@@ -2,15 +2,15 @@ import { OmitType, PartialType } from '@nestjs/mapped-types';
 import { CreateProjectDto } from './create-project.dto';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsDate, IsEnum, IsOptional, IsString } from 'class-validator';
-import { PrjStatus } from 'src/constants/project-status';
+import { EPrjStatus } from 'src/constants/project-status';
 import { Type } from 'class-transformer';
 
 export class UpdateProjectDto extends PartialType(OmitType(CreateProjectDto, ['start_date', 'due_date'] as const)) {
   @ApiPropertyOptional()
   @IsString()
-  @IsEnum(PrjStatus)
+  @IsEnum(EPrjStatus)
   @IsOptional()
-  status: PrjStatus
+  status: EPrjStatus
 
   @ApiPropertyOptional()
   @Type(() => Date)

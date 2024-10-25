@@ -2,7 +2,7 @@ import { IsDate, IsEnum, IsNumber, IsString, Validate } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsAfter } from "src/decorators/date-validation.decorator";
-import { PrjType } from "src/constants/project-type.enum";
+import { EPrjType } from "src/constants/project-type.enum";
 import { IsAfterNow } from "src/decorators/is-after-now.decoratior";
 
 export class CreateProjectDto {
@@ -20,8 +20,8 @@ export class CreateProjectDto {
 
   @ApiProperty()
   @IsString()
-  @IsEnum(PrjType)
-  type: PrjType
+  @IsEnum(EPrjType)
+  type: EPrjType
 
   @ApiProperty()
   @Type(() => Date)

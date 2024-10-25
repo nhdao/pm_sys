@@ -1,11 +1,11 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsEnum, IsString } from "class-validator";
-import { Method } from "src/constants/method.enum";
+import { EMethod } from "src/constants/method.enum";
 
 export class CreatePermissionDto {
   @ApiProperty()
   @IsString()
-  @IsEnum(Method)
+  @IsEnum(EMethod)
   method: string;
 
   @ApiProperty()

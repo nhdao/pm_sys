@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { IsArray, IsDate, IsEmail, IsEnum, IsNumber, IsString } from "class-validator";
-import { Gender } from "../entities/user.entity";
+import { EGender } from "../entities/user.entity";
 import { Type } from "class-transformer";
 import { ApiProperty } from "@nestjs/swagger";
 
@@ -37,8 +37,8 @@ export class CreateUserDto {
     
   @ApiProperty()
   @IsString()
-  @IsEnum(Gender)
-  gender: Gender
+  @IsEnum(EGender)
+  EGender: EGender
   
   @ApiProperty()
   @Type(() => Date)

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
-import { PrjStatus } from 'src/constants/project-status';
+import { EPrjStatus } from 'src/constants/project-status';
 import { MailService } from 'src/mail/mail.service';
 import { Project } from 'src/projects/entities/project.entity';
 import { Task } from 'src/tasks/entities/task.entity';
@@ -21,7 +21,7 @@ export class CronsService {
   async checkProjectDueDate() {
     const projects = await this.projectRepo.find({
       where:{ 
-        status: Not(PrjStatus.CLOSE) 
+        status: Not(EPrjStatus.CLOSE) 
       },
       relations: ['manager'],
       select: { manager: { id: true, email: true, firstname: true, lastname: true }}
@@ -34,7 +34,7 @@ export class CronsService {
         project.due_date.getMonth() === currentDate.getMonth() &&
         project.due_date.getDate() === currentDate.getDate()
       ) {
-        project.status = PrjStatus.CLOSE
+        project.status = EPrjStatus.CLOSE
         await this.projectRepo.save(project)
         await this.mailService.projectCloseNotify(
           project.manager.email, project.name, project.due_date.toString()

@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { MoreThan, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { TechnologiesService } from 'src/technologies/technologies.service';
 import { UserTech } from './entities/user-tech.entity';
@@ -286,5 +286,27 @@ export class UsersService {
             permission: { method: true, api_path: true }
           }}
       }})
+  }
+
+  async saveResetToken(foundUser: User, passwordResetToken: string, passwordResetExpiration: Date) {
+    foundUser.passwordResetToken = passwordResetToken
+    foundUser.passwordResetExpiration = passwordResetExpiration
+    await this.userRepo.save(foundUser)
+  }
+
+  async updatePassword(foundUser: User, password: string) {
+    foundUser.password = password
+    await this.userRepo.save(foundUser)
+  }
+
+  async findOneByResetToken( passwordResetToken: string) {
+    const foundUser = await this.userRepo.findOne({
+      where: {
+        'passwordResetToken': passwordResetToken,
+        'passwordResetExpiration': MoreThan(new Date)
+      }
+    })
+
+    return foundUser
   }
 }

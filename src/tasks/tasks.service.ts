@@ -9,7 +9,7 @@ import { Task } from '../tasks/entities/task.entity';
 import { UsersService } from 'src/users/users.service';
 import { ProjectsService } from 'src/projects/projects.service';
 import { TaskStatusDto } from '../tasks/dto/task-status.dto';
-import { PrjStatus } from 'src/constants/project-status';
+import { EPrjStatus } from 'src/constants/project-status';
 import { IUser } from 'src/interfaces/current-user.interface';
 import { TaskPaginationDto } from './dto/task-pagination-query.dto';
 import { plainToInstance } from 'class-transformer';
@@ -37,7 +37,7 @@ export class TasksService {
         throw new BadRequestException('You are not manager of this project')
       }
     }
-    if(!foundUser.approved || foundProject.status === PrjStatus.CLOSE) {
+    if(!foundUser.approved || foundProject.status === EPrjStatus.CLOSE) {
       throw new BadRequestException('User not verified or Project has been closed')
     }
     if(!foundProject.userProjects.length || 

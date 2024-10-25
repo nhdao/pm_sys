@@ -44,4 +44,14 @@ export class MailService {
     }
     await this.mailerService.sendMail(template)
   }
+
+  async sendForgetPasswordLink(email: string, resetLink: string) {
+    const template = {
+      to: email,
+      from: 'Admin',
+      subject: 'You have a managed project close',
+      html: `<b>Click this link to reset your password: ${resetLink}</b>`
+    }
+    await this.mailerService.sendMail(template)
+  }
 }

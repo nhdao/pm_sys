@@ -5,11 +5,7 @@ import { UserProject } from "./user-project.entity";
 import { UserTech } from "./user-tech.entity";
 import { Role } from "src/roles/entities/role.entity";
 import { Project } from "src/projects/entities/project.entity";
-
-export enum Gender {
-  MALE = 'male',
-  FEMALE = 'female',
-}
+import { EGender } from "src/constants/gender.enum";
 
 @Entity()
 export class User {
@@ -23,6 +19,9 @@ export class User {
   password: string
 
   @Column()
+  avatar: string
+
+  @Column()
   phone: string
 
   @Column()
@@ -32,7 +31,7 @@ export class User {
   lastname: string
 
   @Column()
-  gender: Gender 
+  gender: EGender 
 
   @Column()
   dob: Date
@@ -57,6 +56,15 @@ export class User {
 
   @Column({ nullable: true, default: null })
   refresh_token: string
+
+  @Column({ nullable: true, default: null })
+  passwordResetToken: string
+
+  @Column({ nullable: true, default: null })
+  passwordResetExpiration: Date
+
+  @Column()
+  passwordChangedAt: Date
 
   @ManyToOne(() => Role)
   role: Role

@@ -1,13 +1,13 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsEnum, IsInt, IsOptional, Max, Min } from "class-validator";
-import { Order } from "src/constants/order.enum";
+import { EOrder } from "src/constants/order.enum";
 
 export class PaginationQueryDto {
-  @ApiPropertyOptional({ enum: Order, default: Order.ASC })
-  @IsEnum(Order)
+  @ApiPropertyOptional({ enum: EOrder, default: EOrder.ASC })
+  @IsEnum(EOrder)
   @IsOptional()
-  order?: Order = Order.ASC;
+  order?: EOrder = EOrder.ASC;
 
   @ApiPropertyOptional({
     minimum: 1,
