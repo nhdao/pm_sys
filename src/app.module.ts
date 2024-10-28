@@ -19,6 +19,7 @@ import { CronsModule } from './crons/crons.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PermissionAuthGuard } from './auth/guards/permission-guard.guard';
 import { MailModule } from './mail/mail.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { MailModule } from './mail/mail.module';
     AuthModule,
     CronsModule,
     MailModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [

@@ -23,6 +23,4 @@ export class UsersController {
   async update(@Body() updateUserDto: UpdateUserDto, @CurrentUser() currentUser: IUser) {
     return this.usersService.updateProfile(updateUserDto, currentUser)
   }
-
-  
 }

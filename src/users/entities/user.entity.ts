@@ -18,7 +18,7 @@ export class User {
   @Column()
   password: string
 
-  @Column()
+  @Column({ nullable: true, default: null })
   avatar: string
 
   @Column()
@@ -63,7 +63,7 @@ export class User {
   @Column({ nullable: true, default: null })
   passwordResetExpiration: Date
 
-  @Column()
+  @Column({ nullable: true, default: null })
   passwordChangedAt: Date
 
   @ManyToOne(() => Role)

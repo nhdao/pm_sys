@@ -273,6 +273,19 @@ export class UsersService {
     return checkUserExist
   }
 
+  async getUserPassword(id: number) {
+    const foundUser = await this.userRepo.findOne({
+      where: { id },
+      select: {
+        password: true
+      }
+    })
+    if(!foundUser) {
+      throw new BadRequestException('User not found')
+    }
+    return foundUser
+  }
+
   async getUserPermissions(role: Role) {
     return await this.userRepo.findOne({
       where: { role },

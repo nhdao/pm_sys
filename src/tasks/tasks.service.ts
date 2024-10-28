@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTaskDto } from '../tasks/dto/create-task.dto';
 import { UpdateTaskDto } from '../tasks/dto/update-task.dto';
@@ -43,6 +42,9 @@ export class TasksService {
     if(!foundProject.userProjects.length || 
        !foundProject.userProjects.some(userProject => userProject.user.id === userId)) {
       throw new BadRequestException('This user is not assigned to this project')
+    }
+    if(new Date(deadline) > new Date(foundProject.due_date)) {
+      throw new BadRequestException('Deadline must be before project due date')
     }
     const newTask = this.taskRepo.create({
       description: description,

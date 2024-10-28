@@ -5,6 +5,9 @@ import { UserDto } from 'src/users/dto/user.dto';
 import { Request, Response } from 'express';
 import { Public } from 'src/decorators/is-public.decorator';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ChangePasswordDto } from 'src/users/dto/change-password.dto';
+import { CurrentUser } from 'src/decorators/current-user.decorator';
+import { IUser } from 'src/interfaces/current-user.interface';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -40,4 +43,11 @@ export class AuthController {
   forgetPassword(@Param('code') code: string, @Body() newPassword: string) {
     return this.authService.forgetPassword(code, newPassword)
   } 
+
+  @ApiOperation({ summary: 'Change password' })
+  @Patch('change-password')
+  async changePassword(@Body() changePasswordDto: ChangePasswordDto, @CurrentUser() currentUser: IUser) {
+    return this.authService.changePassword(changePasswordDto, currentUser)
+  }
+  
 }

@@ -8,6 +8,8 @@ import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import { Role } from 'src/roles/entities/role.entity';
 import { MailService } from 'src/mail/mail.service';
+import { IUser } from 'src/interfaces/current-user.interface';
+import { ChangePasswordDto } from 'src/users/dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -114,6 +116,18 @@ export class AuthService {
     } catch(err) {
       throw new BadRequestException('Refresh token invalid!!!')
     }
+  }
+
+  async changePassword(changePasswordDto: ChangePasswordDto, currentUser: IUser) {
+      const { oldPassword, newPassword } = changePasswordDto
+      const foundUser = await this.userService.getUserPassword(+currentUser.id)
+      const isPasswordCorrect = this.checkPassword(oldPassword, foundUser.password)
+      if(!isPasswordCorrect) {
+        throw new BadRequestException('Password not correct')
+      }
+      const newHashedPassword = this.getHashedPassword(newPassword)
+      foundUser.password = newHashedPassword
+      await this.userService.updatePassword(foundUser, newHashedPassword)
   }
 
   getHashedPassword(password: string) {

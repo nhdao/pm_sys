@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { IsArray, IsDate, IsEmail, IsEnum, IsNumber, IsString } from "class-validator";
-import { EGender } from "../entities/user.entity";
 import { Type } from "class-transformer";
 import { ApiProperty } from "@nestjs/swagger";
+import { EGender } from "src/constants/gender.enum";
 
 export class CreateUserDto {
     
