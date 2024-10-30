@@ -5,6 +5,7 @@ import { UsersModule } from 'src/users/users.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailModule } from 'src/mail/mail.module';
+import { RedisModule } from 'src/redis/redis.module';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { MailModule } from 'src/mail/mail.module';
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_ACCESS_TOKEN_SECRET'),
         signOptions:{
-          expiresIn: configService.get<string>('JWT_ACCESS_TOKEN_EXPIRATION') 
+          expiresIn: configService.get<string>('JWT_ACCESS_TOKEN_EXPIRATION')
         } 
       }),
       inject: [ConfigService]
@@ -21,7 +22,8 @@ import { MailModule } from 'src/mail/mail.module';
     forwardRef(() => UsersModule),
     ConfigModule,
     JwtModule,
-    MailModule
+    MailModule,
+    RedisModule
   ],
   controllers: [AuthController],
   providers: [AuthService],

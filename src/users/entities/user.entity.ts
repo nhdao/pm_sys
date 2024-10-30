@@ -55,9 +55,6 @@ export class User {
   approved: boolean
 
   @Column({ nullable: true, default: null })
-  refresh_token: string
-
-  @Column({ nullable: true, default: null })
   passwordResetToken: string
 
   @Column({ nullable: true, default: null })

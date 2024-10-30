@@ -16,6 +16,7 @@ import { UserProject } from './entities/user-project.entity';
 import { Task } from 'src/tasks/entities/task.entity';
 import { UserPaginationDto } from './dto/user-pagination.dto';
 import { IUser } from 'src/interfaces/current-user.interface';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class UsersService {
@@ -25,6 +26,7 @@ export class UsersService {
     @InjectRepository(UserProject) private userProjectRepo: Repository<UserProject>,
     @InjectRepository(Task) private taskRepo: Repository<Task>,
     private techService: TechnologiesService,
+    private redisService: RedisService
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -50,7 +52,6 @@ export class UsersService {
 
     await this.userTechRepo.save(userTechs)
     delete newUser.password
-    delete newUser.refresh_token
     delete newUser.deletedAt
     return newUser
   }
@@ -103,7 +104,6 @@ export class UsersService {
       throw new NotFoundException(`User with id ${id} not found`)
     }
     delete foundUser.password
-    delete foundUser.refresh_token
     delete foundUser.deletedAt
     return foundUser
   }
@@ -209,11 +209,13 @@ export class UsersService {
 
   async updateRole(role: Role, user: User) {
     user.role = role
+    await this.redisService.deleteValueByKey(`user:${user.id}`)
     return await this.userRepo.save(user)
   }
 
   async updateDepartment(department: Department, user: User) {
     user.department = department
+    await this.redisService.deleteValueByKey(`user:${user.id}`)
     return await this.userRepo.save(user)
   }
 
@@ -238,26 +240,11 @@ export class UsersService {
     return foundUser
   }
 
-  async findOneByToken(refreshToken: string) {
-    const foundUser = await this.userRepo.findOneBy({ refresh_token: refreshToken })
-    return foundUser
-  }
-
   async findUsersByRole(role: Role) {
     const users = await this.userRepo.find({
       where: { role }
     })
     return users
-  }
-
-  async updateUserToken(id: number, refreshToken: string) {
-    const foundUser = await this.userRepo.findOneBy({ id })
-    if(!foundUser) {
-      throw new NotFoundException('no user found')
-    }
-    foundUser.refresh_token = refreshToken
-    await this.userRepo.save(foundUser)
-    return plainToInstance(UserResponseDto, foundUser)
   }
 
   async checkUserExist(id: number) {
@@ -275,10 +262,7 @@ export class UsersService {
 
   async getUserPassword(id: number) {
     const foundUser = await this.userRepo.findOne({
-      where: { id },
-      select: {
-        password: true
-      }
+      where: { id }
     })
     if(!foundUser) {
       throw new BadRequestException('User not found')
@@ -301,7 +285,7 @@ export class UsersService {
       }})
   }
 
-  async saveResetToken(foundUser: User, passwordResetToken: string, passwordResetExpiration: Date) {
+  async saveResetToken(foundUser: User, passwordResetToken: string | null, passwordResetExpiration: Date | null) {
     foundUser.passwordResetToken = passwordResetToken
     foundUser.passwordResetExpiration = passwordResetExpiration
     await this.userRepo.save(foundUser)
@@ -312,11 +296,11 @@ export class UsersService {
     await this.userRepo.save(foundUser)
   }
 
-  async findOneByResetToken( passwordResetToken: string) {
+  async findOneByResetToken(passwordResetToken: string) {
     const foundUser = await this.userRepo.findOne({
       where: {
-        'passwordResetToken': passwordResetToken,
-        'passwordResetExpiration': MoreThan(new Date)
+        passwordResetToken: passwordResetToken,
+        passwordResetExpiration: MoreThan(new Date())
       }
     })
 

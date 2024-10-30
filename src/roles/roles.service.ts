@@ -11,6 +11,7 @@ import { UsersService } from 'src/users/users.service';
 import { UserRoleDto } from 'src/users/dto/user-role.dto';
 import { UserResponseDto } from 'src/users/dto/user-response.dto';
 import { plainToInstance } from 'class-transformer';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class RolesService {
@@ -19,6 +20,7 @@ export class RolesService {
     @InjectRepository(RolePermission) private rolePermisisonRepo: Repository<RolePermission>,
     private permissionService: PermissionsService,
     private userService: UsersService,
+    private redisService: RedisService
   ) {}
 
   async adminCreateRole(createRoleDto: CreateRoleDto) {
@@ -37,9 +39,7 @@ export class RolesService {
         }
         return permission
     }))
-      
     await this.roleRepo.save(newRole)
-
     const rolePermissions = permissions.map(permission => {
       return this.rolePermisisonRepo.create({
         role: newRole,
@@ -95,7 +95,6 @@ export class RolesService {
       } 
       foundRole.name = name
     }
-
     Object.assign(foundRole, other)
     await this.roleRepo.save(foundRole)
 
@@ -117,6 +116,7 @@ export class RolesService {
       })
       await this.rolePermisisonRepo.save(rolePermissions)
     }
+    await this.redisService.deleteValueByKey(`role:${foundRole.id}`)
     return await this.roleRepo.findOne({
       where: { id },
       relations: ['rolePermissions', 'rolePermissions.permission']
@@ -131,7 +131,6 @@ export class RolesService {
     if(!foundRole) {
       throw new NotFoundException(`No role found with id ${id}`)
     }
-
     if(foundRole.users.length) {
       throw new BadRequestException(`Role with id ${id} is in used`)
     }
@@ -142,7 +141,6 @@ export class RolesService {
 
   async adminAssignRoleToUsers(id: number, userRole: UserRoleDto) {
     const userIds = Array.from(new Set(userRole.userIds))
-
     const foundRole = await this.roleRepo.findOneBy({ id })
     if(!foundRole) {
       throw new NotFoundException(`Role with id ${id} not found`)

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import * as bcrypt from 'bcryptjs'
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
@@ -10,6 +10,7 @@ import { Role } from 'src/roles/entities/role.entity';
 import { MailService } from 'src/mail/mail.service';
 import { IUser } from 'src/interfaces/current-user.interface';
 import { ChangePasswordDto } from 'src/users/dto/change-password.dto';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class AuthService {
@@ -17,7 +18,8 @@ export class AuthService {
     private userService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
-    private mailService: MailService
+    private mailService: MailService,
+    private redisService: RedisService
   ) {}
 
   async register(createUserDto: CreateUserDto) {
@@ -47,18 +49,22 @@ export class AuthService {
       email: foundUser.email,
     }
     const refreshToken = this.createRefreshToken(payload)
-    await this.userService.updateUserToken(foundUser.id, refreshToken)
     const accessToken = this.jwtService.sign(payload)
+    const accessTokenCookieTTL = this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRATION').slice(0, -1)
+    const refreshTokenCookieTTL = this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION').slice(0, -1)
+    res.clearCookie('refresh_token')
+    res.clearCookie('acces_token')
     res.cookie('refresh_token', refreshToken, {
-      maxAge: parseInt(this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION')) * 1000,
+      maxAge: +refreshTokenCookieTTL * 60 * 1000,
       httpOnly: true,
       // secure: true
     })
     res.cookie('access_token', accessToken, {
-      maxAge: parseInt(this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION')) * 1000,
+      maxAge: +accessTokenCookieTTL * 60 * 1000,
       httpOnly: true,
       // secure: true
     })
+
     return {
       access_token:  accessToken,
       refresh_token: refreshToken,
@@ -69,39 +75,65 @@ export class AuthService {
     }
   }
 
-  async handleRefreshToken(refreshToken: string, res: Response) {
+  async signOut(req: Request, currentUser: IUser) {
     try {
-      this.jwtService.verify(refreshToken, {
+      const accessToken = req.headers.authorization?.split(' ')[1]
+      const refreshToken = req.headers['x-refresh-token'] as string
+      if(!accessToken || !refreshToken) {
+        throw new BadRequestException('Token missing')
+      }
+      // Add token pair to blacklist 
+      const accessTokenTTL = +this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRATION').slice(0, -1) *  60
+      const refreshTokenTTL = +this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION').slice(0, -1) *  60
+      if(!await this.redisService.checkKeyExist(accessToken)) {
+        await this.redisService.setKeyWithEx(accessToken, currentUser.id, accessTokenTTL)
+      }
+      if(!await this.redisService.checkKeyExist(refreshToken)) {
+        await this.redisService.setKeyWithEx(refreshToken, currentUser.id, refreshTokenTTL)
+      }
+
+      return `You've been signed out`
+    } catch(err) {
+      throw new InternalServerErrorException('Something went wrong')
+    }
+  }
+
+  async handleRefreshToken(refreshToken: string, res: Response) {
+      const checkTokenBlacklisted = await this.redisService.checkKeyExist(refreshToken)
+      if(checkTokenBlacklisted) {
+        throw new UnauthorizedException('Invalid token')
+      }
+      const decoded = this.jwtService.verify(refreshToken, {
         secret: this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET')
       })
-      const user = await this.userService.findOneByToken(refreshToken)
-      if(!user) {
-        throw new BadRequestException('Refresh token invalid!!!')
-      }
-      const { id, email } = user
+   
+      const { id, email } = decoded
       const payload = {
         sub: 'refresh token',
         iss: 'from server with love',
         id,
         email
       }
-      // Update new refresh token
       const newRefreshToken = this.createRefreshToken(payload)
-      await this.userService.updateUserToken(id, newRefreshToken)
       const newAccessToken =  this.jwtService.sign(payload)
+
+      const blacklistTTL = +this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION').slice(0, -1) *  60 * 1000
+      await this.redisService.setKeyWithEx(refreshToken, id, blacklistTTL)
+
       // Clear old cookie before setting a new one (for safety reasons)
       res.clearCookie('refresh_token')
       res.clearCookie('acces_token')
-
+      const accessTokenCookieTTL = this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRATION').slice(0, -1)
+      const refreshTokenCookieTTL = this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION').slice(0, -1)
       // Set new refresh token as cookie
       res.cookie('refresh_token', newRefreshToken, { 
-        maxAge: parseInt(this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION')) * 1000,
+        maxAge: +accessTokenCookieTTL * 60 * 1000,
         httpOnly: true,
         // secure: true 
       })
 
       res.cookie('access_token', newAccessToken, { 
-        maxAge: parseInt(this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION')) * 1000,
+        maxAge: +refreshTokenCookieTTL * 60 * 1000,
         httpOnly: true,
         // secure: true
       })
@@ -109,25 +141,23 @@ export class AuthService {
         access_token:  newAccessToken,
         refresh_token: newRefreshToken,
         user: {
-          id: user.id,
-          email: user.email
+          id,
+          email
         }
       }
-    } catch(err) {
-      throw new BadRequestException('Refresh token invalid!!!')
-    }
   }
 
   async changePassword(changePasswordDto: ChangePasswordDto, currentUser: IUser) {
       const { oldPassword, newPassword } = changePasswordDto
       const foundUser = await this.userService.getUserPassword(+currentUser.id)
-      const isPasswordCorrect = this.checkPassword(oldPassword, foundUser.password)
+      const isPasswordCorrect = await this.checkPassword(oldPassword, foundUser.password)
       if(!isPasswordCorrect) {
         throw new BadRequestException('Password not correct')
       }
       const newHashedPassword = this.getHashedPassword(newPassword)
       foundUser.password = newHashedPassword
       await this.userService.updatePassword(foundUser, newHashedPassword)
+      return 'Change password successfully'
   }
 
   getHashedPassword(password: string) {
@@ -135,6 +165,7 @@ export class AuthService {
     const hashedPassword = bcrypt.hashSync(password, salt)
     return hashedPassword
   }
+
   async checkPassword(password: string, hashedPassword: string) {
     return await bcrypt.compare(password, hashedPassword)
   }
@@ -153,31 +184,34 @@ export class AuthService {
       throw new BadRequestException('No user found with this email')
     }
     const token = bcrypt.genSaltSync(10)
-    const hashedToken = bcrypt.hashSync(token)
     const passwordResetExpiration = new Date((Date.now() + 10 * 60 * 1000))
-    await this.userService.saveResetToken(foundUser, hashedToken, passwordResetExpiration) 
-    const resetLink = `${req.protocol}://${req.get('host')}/api/auth/resetPassword/${req.params.token}`
-    console.log(resetLink)
+    await this.userService.saveResetToken(foundUser, token, passwordResetExpiration) 
+    const resetLink = `${req.protocol}://${req.get('host')}/api/auth/forget-password/${token}`
     await this.mailService.sendForgetPasswordLink(email, resetLink)
+    return 'Check your email to reset your password'
   }
 
   async forgetPassword(code: string, newPassword: string) {
     // Verify code
-    const hashedToken = bcrypt.hashSync(code)
-    const foundUser = await this.userService.findOneByResetToken(hashedToken)
+    const foundUser = await this.userService.findOneByResetToken(code)
     if(!foundUser) {
       throw new BadRequestException('Token invalid or has expired')
     }
     // Update new password
-    await this.userService.saveResetToken(foundUser, null, null)
     const hashedPassword = this.getHashedPassword(newPassword)
     await this.userService.updatePassword(foundUser, hashedPassword)
+    await this.userService.saveResetToken(foundUser, null, null)
+    return 'Reset password successfully'
   }
 
   async validateToken(token: string) {
-    return await this.jwtService.verifyAsync(token, {
-      secret: this.configService.get<string>('JWT_ACCESS_TOKEN_SECRET')
-    })
+    try {
+      return await this.jwtService.verifyAsync(token, {
+        secret: this.configService.get<string>('JWT_ACCESS_TOKEN_SECRET')
+      })
+    } catch(err) {
+      throw new InternalServerErrorException('Something went wrong')
+    }
   }
 
   async getUserDetail(id: number) {

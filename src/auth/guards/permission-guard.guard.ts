@@ -2,12 +2,14 @@ import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@
 import { AuthService } from '../auth.service';
 import { Reflector } from '@nestjs/core';
 import { IS_SKIP_PERMISSION } from 'src/decorators/is-skip-permission.decorator';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class PermissionAuthGuard implements CanActivate {
   constructor(
     private authService: AuthService,
-    private reflector: Reflector
+    private reflector: Reflector,
+    private redisService: RedisService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -21,20 +23,21 @@ export class PermissionAuthGuard implements CanActivate {
     const targetPath = request.route.path
     // console.log(targetMethod)
     // console.log(targetPath)
-  
     if(targetPath.startsWith('/auth')) {
       return true
     }
-
-    const userPermissions = await this.authService.getUserPermissions(request.user.role)
-    const checkPermission = userPermissions.role.rolePermissions.some(rolePermissions => (
-      targetMethod === rolePermissions.permission.method
+    // Check if role exists in redis first
+    let cachedRole = await this.redisService.getValueByKey(`role:${request.user.role.id}`)
+    if(!cachedRole) {
+      const userPermissions = await this.authService.getUserPermissions(request.user.role)
+      cachedRole = userPermissions.role
+      await this.redisService.setKeyWithEx(`role:${cachedRole.id}`, JSON.stringify(cachedRole))
+    }  
+    const checkPermission = cachedRole.rolePermissions.some(rolePermission => (
+      targetMethod === rolePermission.permission.method
       &&
-      targetPath === rolePermissions.permission.api_path
+      targetPath === rolePermission.permission.api_path
     ))
-
-    // console.log(checkPermission)
-    
     if(!checkPermission && !isSkipPermission) {
       throw new ForbiddenException(`You're not allowed to access this endpoint`)
     }

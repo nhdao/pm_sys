@@ -2,12 +2,14 @@ import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from
 import { AuthService } from '../auth.service';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from 'src/decorators/is-public.decorator';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
     private authService: AuthService,
-    private reflector: Reflector
+    private reflector: Reflector,
+    private redisService: RedisService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -27,25 +29,30 @@ export class JwtAuthGuard implements CanActivate {
     }
     
     const accessToken = authorization.split(' ')[1]
-
+    // Check token in blacklist
+    if(await this.redisService.checkKeyExist(accessToken)) {
+      throw new UnauthorizedException('Invalid token')
+    }
     const decodedData = await this.authService.validateToken(accessToken);
-
     if(!decodedData) {
       throw new UnauthorizedException('Invalid token')
     }
-
-    const foundUser = await this.authService.getUserDetail(decodedData.id)
-    if(!foundUser) {
-      throw new UnauthorizedException('Invalid user') 
-    }
-
+    // Check user info in cache first
+    let cachedUser = await this.redisService.getValueByKey(`user:${decodedData.id}`)
+    if(!cachedUser) {
+      const foundUser = await this.authService.getUserDetail(decodedData.id)
+      if(!foundUser) {
+        throw new UnauthorizedException('Invalid user') 
+      }
+      cachedUser = foundUser
+      await this.redisService.setKeyWithEx(`user:${foundUser.id}`, JSON.stringify(cachedUser))
+    } 
     request.user = {
-      id: decodedData.id,
-      email: decodedData.email,
-      role: foundUser.role,
-      department: foundUser.department,
+      id: cachedUser.id,
+      email: cachedUser.email,
+      role: cachedUser.role,
+      department: cachedUser.department,
     }
-    // console.log(request.user)
     return true
   }
 }

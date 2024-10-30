@@ -6,6 +6,7 @@ import { RolePermission } from './entities/role-permission.entity';
 import { Role } from './entities/role.entity';
 import { PermissionsModule } from 'src/permissions/permissions.module';
 import { UsersModule } from 'src/users/users.module';
+import { RedisModule } from 'src/redis/redis.module';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { UsersModule } from 'src/users/users.module';
       Role, RolePermission
     ]),
     PermissionsModule,
-    UsersModule
+    UsersModule,
+    RedisModule
   ],
   controllers: [AdminRolesController],
   providers: [RolesService],

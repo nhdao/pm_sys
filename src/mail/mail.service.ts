@@ -49,7 +49,7 @@ export class MailService {
     const template = {
       to: email,
       from: 'Admin',
-      subject: 'You have a managed project close',
+      subject: 'Do you forget your password?',
       html: `<b>Click this link to reset your password: ${resetLink}</b>`
     }
     await this.mailerService.sendMail(template)

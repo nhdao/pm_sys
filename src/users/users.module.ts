@@ -10,6 +10,7 @@ import { TasksModule } from 'src/tasks/tasks.module';
 import { AdminUsersController } from './admin-users.controller';
 import { AuthModule } from 'src/auth/auth.module';
 import { Task } from 'src/tasks/entities/task.entity';
+import { RedisModule } from 'src/redis/redis.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -17,7 +18,8 @@ import { Task } from 'src/tasks/entities/task.entity';
     ]),
     TechnologiesModule,
     forwardRef(() => TasksModule),
-    AuthModule
+    AuthModule,
+    RedisModule
   ],
   controllers: [UsersController, AdminUsersController],
   providers: [UsersService],
